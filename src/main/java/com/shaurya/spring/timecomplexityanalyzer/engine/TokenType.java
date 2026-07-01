@@ -7,17 +7,14 @@ package com.shaurya.spring.timecomplexityanalyzer.engine;
 public enum TokenType {
 
     // --- Keywords ---
-    FOR, WHILE, DO, IF, ELSE,
-    INT, LONG, DOUBLE, FLOAT, BOOLEAN, CHAR, VOID,
-    RETURN, BREAK, CONTINUE,
-    NEW, THIS, STATIC, FINAL, CLASS, PUBLIC, PRIVATE, PROTECTED,
+    FOR,
+    WHILE,
 
-    // --- Structural (critical for nesting depth) ---
+    // --- Structural (critical for nesting depth tracking) ---
     LBRACE,     // {
     RBRACE,     // }
     LPAREN,     // (
     RPAREN,     // )
-    SEMICOLON,  // ;
 
     // --- Log n detectors ---
     DIVIDE_ASSIGN,    // /=
@@ -25,16 +22,10 @@ public enum TokenType {
     SHIFT_LEFT,       //
     SHIFT_RIGHT,      // >>
 
-    // --- General operators ---
-    ASSIGN,    // =
-    LESS,      //
-    GREATER,   // >
-
     // --- Literals ---
     IDENTIFIER,  // variable names: i, n, arr
     NUMBER,      // 0, 1, 2
 
     // --- Catch-all ---
-    EOF,    // end of input
     OTHER   // anything else
 }

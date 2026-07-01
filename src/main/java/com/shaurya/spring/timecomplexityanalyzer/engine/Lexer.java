@@ -14,31 +14,31 @@ public class Lexer {
 
     // Tracks current position in source during scanning (fast pointer)
     private int current = 0;
-
     // Marks the beginning of the current token being scanned (slow pointer)
     private int start = 0;
-
     // Source code string being lexed
     private final String source;
 
-    private final List<Token> tokens = new ArrayList<Token>();
+    private final List<Token> tokens = new ArrayList<>();
 
     public Lexer(String source) {
-        this.source = source;
+        this.source = stripComments(source);
     }
 
     // Scans source for tokens
     public void scan() {
         // Traverses until end of source
         while (current < source.length()) {
+            //increment current until a meaningful token is formed
             while (current < source.length() && isTriggerChar(source.charAt(current))) {
                 current++;
             }
+            //Add new token to token list
             if (!source.substring(start, current).isEmpty()) {
                 tokens.add(new Token(source.substring(start, current)
                         , matchToken(source.substring(start, current))));
             }
-
+            //Add new character token to token list
             if (current < source.length() && !Character.isWhitespace(source.charAt(current))) {
                 // Handles two-char operators like ++, --, *=, /=, <<, >>
                 if (current + 1 < source.length() && isTwoCharOperator(source.charAt(current), source.charAt(current + 1))) {
@@ -51,6 +51,7 @@ public class Lexer {
                 tokens.add(new Token(String.valueOf(source.charAt(current)),
                         matchToken(String.valueOf(source.charAt(current)))));
             }
+
             current++;
             start = current;
         }
@@ -60,35 +61,20 @@ public class Lexer {
     private boolean isTriggerChar(char c) {
         return Character.isLetterOrDigit(c);
     }
-
     // Returns true if two consecutive chars form a valid two-char operator
     private boolean isTwoCharOperator(char first, char second) {
-        switch (first) {
-            case '+':
-                return second == '+' || second == '=';
-            case '-':
-                return second == '-' || second == '=';
-            case '*':
-                return second == '=';
-            case '/':
-                return second == '=';
-            case '<':
-                return second == '<' || second == '=';
-            case '>':
-                return second == '>' || second == '=';
-            case '=':
-                return second == '=';
-            case '!':
-                return second == '=';
-            case '&':
-                return second == '&';
-            case '|':
-                return second == '|';
-            default:
-                return false;
-        }
+        return switch (first) {
+            case '+' -> second == '+' || second == '=';
+            case '-' -> second == '-' || second == '=';
+            case '*', '/', '=', '!' -> second == '=';
+            case '<' -> second == '<' || second == '=';
+            case '>' -> second == '>' || second == '=';
+            case '&' -> second == '&';
+            case '|' -> second == '|';
+            default -> false;
+        };
     }
-
+    // Maps a lexeme to its corresponding token type
     private TokenType matchToken(String lexeme) {
         switch (lexeme) {
             // Keywords
@@ -96,49 +82,6 @@ public class Lexer {
                 return FOR;
             case "while":
                 return WHILE;
-            case "do":
-                return DO;
-            case "if":
-                return IF;
-            case "else":
-                return ELSE;
-            case "int":
-                return INT;
-            case "long":
-                return LONG;
-            case "double":
-                return DOUBLE;
-            case "float":
-                return FLOAT;
-            case "boolean":
-                return BOOLEAN;
-            case "char":
-                return CHAR;
-            case "void":
-                return VOID;
-            case "return":
-                return RETURN;
-            case "break":
-                return BREAK;
-            case "continue":
-                return CONTINUE;
-            case "new":
-                return NEW;
-            case "this":
-                return THIS;
-            case "static":
-                return STATIC;
-            case "final":
-                return FINAL;
-            case "class":
-                return CLASS;
-            case "public":
-                return PUBLIC;
-            case "private":
-                return PRIVATE;
-            case "protected":
-                return PROTECTED;
-
             // Structural
             case "{":
                 return LBRACE;
@@ -148,8 +91,6 @@ public class Lexer {
                 return LPAREN;
             case ")":
                 return RPAREN;
-            case ";":
-                return SEMICOLON;
 
             // Log n detectors
             case "/=":
@@ -160,24 +101,40 @@ public class Lexer {
                 return SHIFT_LEFT;
             case ">>":
                 return SHIFT_RIGHT;
-
-            // General operators
-            case "=":
-                return ASSIGN;
-            case "<":
-                return LESS;
-            case ">":
-                return GREATER;
-
-            // TODO: implement IDENTIFIER and NUMBER classification
             default:
+                if (lexeme.chars().allMatch(Character::isDigit)) return NUMBER;
+                if (lexeme.chars().allMatch(Character::isLetterOrDigit)) return IDENTIFIER;
                 return OTHER;
         }
     }
-
+    // Logs all identified tokens for debugging
     public void printTokens() {
         for (Token token : tokens) {
             logger.info(token.toString());
         }
+    }
+    //Removes comments from the source string
+    private String stripComments(String source) {
+        StringBuilder result = new StringBuilder();
+        int i = 0;
+        while (i < source.length()) {
+            if (i + 1 < source.length() && source.charAt(i) == '/' && source.charAt(i + 1) == '/') {
+                while (i < source.length() && source.charAt(i) != '\n') {
+                    i++;
+                }
+            }
+            else if (i + 1 < source.length() && source.charAt(i) == '/' && source.charAt(i + 1) == '*') {
+                i += 2;
+                while (i + 1 < source.length() && !(source.charAt(i) == '*' && source.charAt(i + 1) == '/')) {
+                    i++;
+                }
+                i += 2;
+            }
+            else {
+                result.append(source.charAt(i));
+                i++;
+            }
+        }
+        return result.toString();
     }
 }

@@ -1,5 +1,7 @@
 package com.shaurya.spring.timecomplexityanalyzer.engine;
 
+import static com.shaurya.spring.timecomplexityanalyzer.engine.TokenType.*;
+
 public class Token {
     final String lexeme;
     final TokenType type;

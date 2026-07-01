@@ -16,6 +16,7 @@ public class TimeComplexityAnalyzerApplication {
                 "                System.out.print(i + \",\" + j + \" \");\n" +
                 "            }\n" +
                 "            System.out.println();\n" +
+                "// this is a test comment" +
                 "        }");
         lexer.scan();
         lexer.printTokens();
