@@ -10,7 +10,14 @@ public class TimeComplexityAnalyzerApplication {
     public static void main(String[] args) {
         SpringApplication.run(TimeComplexityAnalyzerApplication.class, args);
 
-        Lexer lexer = new Lexer("i++ i-- i*=2 i/=2 i<<1 i>>1 i==j i!=j i<=j i>=j i+=1 i-=1 a&&b a||b");
+        Lexer lexer = new Lexer("int n = 3;\n" +
+                "        for (int i = 0; i < n; i++) {\n" +
+                "            for (int j = 0; j < n; j++) {\n" +
+                "                System.out.print(i + \",\" + j + \" \");\n" +
+                "            }\n" +
+                "            System.out.println();\n" +
+                "        }");
         lexer.scan();
+        lexer.printTokens();
     }
 }
