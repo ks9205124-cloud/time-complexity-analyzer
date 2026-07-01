@@ -31,7 +31,15 @@ public class Lexer {
             if(!source.substring(start, current).isEmpty()){
                 logger.info(source.substring(start, current));
             }
+
             if(current < source.length() && !Character.isWhitespace(source.charAt(current))){
+                // Handles two-char operators like ++, --, *=, /=, <<, >>
+                if (current+1 < source.length() && isTwoCharOperator(source.charAt(current), source.charAt(current+1))) {
+                    logger.info(source.substring(current, current+2));
+                    current = current+2;
+                    start = current;
+                    continue;
+                }
                 logger.info(String.valueOf(source.charAt(current)));
             }
             current++;
@@ -43,5 +51,22 @@ public class Lexer {
     // TODO: token classification logic not yet implemented
     private boolean isTriggerChar(char c){
         return Character.isLetterOrDigit(c);
+    }
+    
+    // Returns true if two consecutive chars form a valid two-char operator
+    private boolean isTwoCharOperator(char first, char second){
+        switch (first){
+            case '+': return second == '+' || second == '=';
+            case '-': return second == '-' || second == '=';
+            case '*': return second == '=';
+            case '/': return second == '=';
+            case '<': return second == '<' || second == '=';
+            case '>': return second == '>' || second == '=';
+            case '=': return second == '=';
+            case '!': return second == '=';
+            case '&': return second == '&';
+            case '|': return second == '|';
+            default:  return false;
+        }
     }
 }
