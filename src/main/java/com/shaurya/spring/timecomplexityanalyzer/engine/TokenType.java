@@ -27,5 +27,6 @@ public enum TokenType {
     NUMBER,      // 0, 1, 2
 
     // --- Catch-all ---
-    OTHER   // anything else
+    OTHER,   // anything else
+    EOF
 }

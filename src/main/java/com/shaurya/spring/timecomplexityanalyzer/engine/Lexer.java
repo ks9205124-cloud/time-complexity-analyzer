@@ -19,14 +19,14 @@ public class Lexer {
     // Source code string being lexed
     private final String source;
 
-    private final List<Token> tokens = new ArrayList<>();
+    public final List<Token> tokens = new ArrayList<>();
 
     public Lexer(String source) {
         this.source = stripComments(source);
     }
 
     // Scans source for tokens
-    public void scan() {
+    public List<Token> scan() {
         // Traverses until end of source
         while (current < source.length()) {
             //increment current until a meaningful token is formed
@@ -55,6 +55,8 @@ public class Lexer {
             current++;
             start = current;
         }
+        tokens.add(new Token("rBrace",RBRACE));
+        return tokens;
     }
 
     // Returns true if char is part of an identifier or keyword (letter or digit)
