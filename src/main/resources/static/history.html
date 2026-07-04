@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>History - Time Complexity Analyzer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+<nav class="navbar">
+    <h2 class="logo">Time Complexity Analyzer</h2>
+    <ul class="navlinks">
+        <li><a href="index.html#inputSection">Code</a></li>
+        <li><a href="index.html#outputSection">Result</a></li>
+        <li><a href="history.html">History</a></li>
+    </ul>
+</nav>
+
+<div class="centerText">
+    <h3 id="historySection">Submission History</h3>
+    <p class="pastal">every snippet you've analyzed, most recent first</p>
+</div>
+
+<div class="area" id="historyWrap">
+    <table id="historyTable">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Code</th>
+            <th>Complexity</th>
+            <th>Depth</th>
+        </tr>
+        </thead>
+        <tbody id="historyBody">
+        </tbody>
+    </table>
+    <p id="emptyState" style="display:none;">No submissions yet — analyze some code to see it here.</p>
+</div>
+
+<script src="script_history.js"></script>
+
+</body>
+
+</html>

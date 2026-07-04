@@ -109,3 +109,83 @@ body{
 .area button:hover {
     background-color: #BA55D3; /* purple hover effect */
 }
+
+/* --- History page additions --- */
+#historyWrap {
+    align-items: stretch;
+    max-width: 900px;
+    margin: 20px auto;
+}
+
+#historyTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: medium;
+    table-layout: fixed;
+}
+
+#historyTable th:nth-child(1),
+#historyTable td:nth-child(1) {
+    width: 60px;
+}
+
+#historyTable th:nth-child(2),
+#historyTable td:nth-child(2) {
+    width: 50%;
+}
+
+#historyTable th:nth-child(3),
+#historyTable td:nth-child(3) {
+    width: 140px;
+}
+
+#historyTable th:nth-child(4),
+#historyTable td:nth-child(4) {
+    width: 80px;
+}
+
+#historyTable thead th {
+    text-align: left;
+    padding: 12px 16px;
+    background-color: #161928;
+    color: #F8F7FC;
+    font-weight: 600;
+}
+
+#historyTable thead th:first-child {
+    border-radius: 10px 0 0 10px;
+}
+
+#historyTable thead th:last-child {
+    border-radius: 0 10px 10px 0;
+}
+
+#historyTable tbody td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #E4E4E4;
+    color: #434243;
+    vertical-align: top;
+}
+
+#historyTable tbody tr:hover {
+    background-color: #F6F7F7;
+}
+
+#historyTable tbody td.code-cell {
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 0.9em;
+    color: #161928;
+}
+
+#historyTable tbody td.complexity-cell {
+    font-weight: 600;
+    color: #BA55D3;
+}
+
+#emptyState {
+    text-align: center;
+    color: #ABA1AD;
+    padding: 20px 0;
+}

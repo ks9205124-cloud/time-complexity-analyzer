@@ -6,6 +6,7 @@ const ding = new Audio("Windows_10_ding.mp3");
 ding.volume = .05;
 analyzeButton.addEventListener("click", () => {
     outputSection.style.display = "flex";
+    ding.currentTime = 0;
     ding.play();
     outputSection.scrollIntoView({ behavior: "smooth" });
 
@@ -33,3 +34,4 @@ navLinks.forEach(link => {
         ding.play();
     });
 });
+
