@@ -95,6 +95,10 @@ public class Lexer {
                 return RPAREN;
 
             // Log n detectors
+            case "++":
+                return PLUS_PLUS;
+            case "--":
+                return MINUS_MINUS;
             case "/=":
                 return DIVIDE_ASSIGN;
             case "*=":

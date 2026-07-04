@@ -9,8 +9,8 @@ public class ComplexityAnalyzer {
     }
     public ComplexityResult result(){
         return switch (parser.depth) {
-            case 0 -> new ComplexityResult("O(1)");
-            default -> new ComplexityResult("O(n^" + parser.getDepth() + ")");
+            case 0 -> new ComplexityResult("O(1)",String.valueOf(parser.depth));
+            default -> new ComplexityResult("O(n^" + parser.getDepth() + ")",String.valueOf(parser.depth));
         };
     }
 }

@@ -2,10 +2,12 @@ package com.shaurya.spring.timecomplexityanalyzer.engine;
 
 import com.shaurya.spring.timecomplexityanalyzer.engine.nodes.ForNode;
 import com.shaurya.spring.timecomplexityanalyzer.engine.nodes.LBraceNode;
+import com.shaurya.spring.timecomplexityanalyzer.engine.nodes.logN_Node;
 import com.shaurya.spring.timecomplexityanalyzer.engine.nodes.rootNode;
 import lombok.Getter;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 
 import static com.shaurya.spring.timecomplexityanalyzer.engine.TokenType.*;
@@ -17,6 +19,8 @@ public class Parser {
     @Getter
     public int depth = 0;
 
+    public ArrayList<Integer> logN = new ArrayList<>();
+    public ArrayList<Integer> depthList = new ArrayList<>();
 
     Deque<rootNode> stack = new ArrayDeque<>();
 
@@ -56,8 +60,8 @@ public class Parser {
 
     private int getCurrentDepth() {
         int depth = 0;
-        for(rootNode node : stack) {
-            if(node instanceof ForNode) {
+        for (rootNode node : stack) {
+            if (node instanceof ForNode) {
                 depth++;
             }
         }

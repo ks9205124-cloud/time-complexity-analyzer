@@ -19,6 +19,7 @@ public class AnalysisController {
     }
 
     @PostMapping
+    @RequestMapping("/analyze")
     public ComplexityResult analyze(@RequestBody AnalysisRequest analysisRequest){
         return analysisService.Analyze(analysisRequest.code());
     }

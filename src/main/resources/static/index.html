@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time space complexity analyzer</title>
+    <link rel="styleSheet" href="styles.css">
+</head>
+
+<body>
+<nav class="navbar">
+    <h2 class="logo">Time Complexity Analyzer</h2>
+    <ul class="navlinks">
+        <li><a href="#inputSection">Code</a></li>
+        <li><a href="#outputSection">Result</a></li>
+    </ul>
+</nav>
+<div class="centerText">
+    <h3 id="inputSection">Analyze Your Code</h3>
+    <p class="pastal">paste your code below to analyze its time complexity</p>
+</div>
+<div class="area">
+    <textarea id="inputArea" placeholder="// Paste your code here ...
+void print(int n) {
+    for (let i = 0; i &lt; n; i++) {
+        printf(arr[i]);
+    }
+}">
+</textarea>
+    <button type="submit" id="analyzeButton">Analyze</button>
+</div>
+<div class="area" id="outputSection" style="display: none;">
+    <textarea id="timeArea">Time complexity :
+            O(1)
+        </textarea>
+    <textarea id="spaceArea">Space complexity :
+            O(1)
+        </textarea>
+    <p id="comment">This code has no loop and no dynamic memory allocation hence time,space complexities are O(1)</p>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+
+</html>

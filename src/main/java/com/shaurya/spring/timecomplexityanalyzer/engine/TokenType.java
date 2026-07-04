@@ -17,6 +17,8 @@ public enum TokenType {
     RPAREN,     // )
 
     // --- Log n detectors ---
+    PLUS_PLUS,
+    MINUS_MINUS,
     DIVIDE_ASSIGN,    // /=
     MULTIPLY_ASSIGN,  // *=
     SHIFT_LEFT,       //
