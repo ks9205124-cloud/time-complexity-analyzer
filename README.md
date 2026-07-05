@@ -1,13 +1,18 @@
 # Time Complexity Analyzer
 
-A Spring Boot application that analyzes pasted code snippets and detects their time complexity — built with a hand-written lexer, recursive descent parser, and AST-based analysis engine (no external parsing libraries).
+## About
+
+This project analyzes pasted code and detects its time complexity — not by calling an existing parsing library, but by building the entire pipeline from scratch: a hand-written lexer, a custom stack-based parser, and a complexity-detection engine written on top of it. It started as a way to actually understand how compilers reason about code (scanning, tokens, nesting) rather than just using a tool like ANTLR without knowing what's happening underneath. It's also a full-stack Spring Boot project end to end — REST API, MySQL persistence, and a plain HTML/CSS/JS frontend with submission history — deployed live rather than left running only on localhost.
+
+**Live demo:** [https://time-complexity-analyzer-kaos.onrender.com](https://time-complexity-analyzer-kaos.onrender.com)
+*(hosted on Render's free tier — the backend may take 30–60 seconds to wake up if it's been idle)*
 
 ## What it does
 
 Paste a code snippet into the web UI, and the backend:
 1. Tokenizes it with a custom lexer
-2. Parses the tokens into an Abstract Syntax Tree (AST) using a hand-written recursive descent parser
-3. Walks the AST to detect loop nesting depth and classify time complexity (O(1), O(n), O(n²), O(n³), O(log n), O(n log n))
+2. Parses the tokens with a stack-based parser, tracking `{ }` nesting as it goes
+3. Classifies time complexity based on loop nesting depth (`for` loops currently; `while` support in progress)
 4. Stores every submission in MySQL
 5. Displays results instantly, with a full submission history page
 
@@ -18,8 +23,9 @@ Paste a code snippet into the web UI, and the backend:
 | Backend | Spring Boot (REST API) |
 | Database | MySQL + Spring Data JPA |
 | Frontend | HTML + CSS + vanilla JS |
-| Analysis Engine | Hand-written Java lexer + recursive descent parser + AST walker |
+| Analysis Engine | Hand-written Java lexer + stack-based parser + brace-depth complexity classifier |
 | Build Tool | Maven |
+| Hosting | [Render](https://render.com) (backend, Docker-based deploy) + [filess.io](https://filess.io) (free-tier MySQL) |
 
 ## Architecture
 
@@ -49,6 +55,21 @@ Raw code string
 |---|---|---|
 | `POST` | `/api/analyze` | Accepts `{ "code": "..." }`, returns `{ complexity, depth }` and saves the submission |
 | `GET` | `/api/submissions` | Returns all past submissions |
+
+## Deployment
+
+The app is deployed as a Docker container on **Render**, connected to a free-tier **MySQL instance on filess.io**. A few real constraints from getting this working, worth knowing if you're deploying your own fork:
+
+- **`mvnw` executable bit** — Git doesn't always preserve the Unix executable permission when committed from Windows. Fixed with `git update-index --chmod=+x mvnw` and a `.gitattributes` rule (`mvnw text eol=lf`) to keep line endings consistent. The Dockerfile also runs `chmod +x mvnw` as a backup.
+- **DB credentials via environment variables** — `application.properties` references `${DB_URL}`, `${DB_USERNAME}`, `${DB_PASSWORD}` rather than hardcoded values; the real values are set in Render's Environment tab, not committed to Git.
+- **Hibernate dialect** — explicitly set `spring.jpa.database-platform=org.hibernate.dialect.MySQLDialect` since auto-detection failed against filess.io without it.
+- **SSL connection params** — filess.io's JDBC URL needs `?useSSL=true&requireSSL=false&serverTimezone=UTC` appended.
+- **Connection pool size** — filess.io's free tier caps connections at 5 total for the DB user. Spring Boot's default HikariCP pool (10 connections) exceeds that immediately. Capped with:
+  ```properties
+  spring.datasource.hikari.maximum-pool-size=2
+  spring.datasource.hikari.minimum-idle=1
+  ```
+- **Frontend pointed at localhost** — easy to miss: the deployed JS files must point `fetch()` calls at the live backend URL, not `http://localhost:8080`, or the live site will silently talk to whatever's running on your own machine instead of the deployed server.
 
 ## Project Structure
 
@@ -83,6 +104,7 @@ src/main/resources/
 │   ├── script.js
 │   └── script_history.js
 └── application.properties.example
+Dockerfile
 ```
 
 ## Running Locally
@@ -131,7 +153,7 @@ mvnw.cmd spring-boot:run
 ```
 Or just hit **Run** on `TimeComplexityAnalyzerApplication.java` in IntelliJ.
 
-The backend starts at `http://localhost:8080`. Hibernate will auto-create the `submissions` table in `tca_db` on first run.
+The backend starts at `http://localhost:8080`. Hibernate will auto-create the table in `tca_db` on first run.
 
 ### 5. Open the frontend
 Since the frontend lives in `src/main/resources/static/`, Spring Boot serves it directly. With the app running, open:
@@ -190,8 +212,7 @@ for(int i = 0; i < n; i++){
 - Recursion detection (method declarations + self-referencing calls → O(2ⁿ), O(log n), etc.)
 - Multi-language support: hand-written lexers and parsers for C, JavaScript, and Python
 - Python indentation-based block detection (no `{ }` to rely on)
-- Deployment: backend + MySQL on Railway, frontend on Vercel/Netlify
 
 ## Status
 
-🚧 Core pipeline working end to end (lexer → parser → complexity classification → REST API → MySQL → frontend with history) for `for`-loop nesting detection. `while` loop support and an independent AST-walking analyzer are in progress before calling this v1 complete.
+✅ Deployed and live at [time-complexity-analyzer-kaos.onrender.com](https://time-complexity-analyzer-kaos.onrender.com) — full pipeline (lexer → parser → complexity classification → REST API → MySQL → frontend with history) working end to end for `for`-loop nesting detection. `while` loop support and an independent AST-walking analyzer are the next things planned before calling this v1 complete.
