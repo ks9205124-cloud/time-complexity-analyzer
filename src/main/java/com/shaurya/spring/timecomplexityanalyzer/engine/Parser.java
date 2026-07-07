@@ -1,9 +1,6 @@
 package com.shaurya.spring.timecomplexityanalyzer.engine;
 
-import com.shaurya.spring.timecomplexityanalyzer.engine.nodes.ForNode;
-import com.shaurya.spring.timecomplexityanalyzer.engine.nodes.LBraceNode;
-import com.shaurya.spring.timecomplexityanalyzer.engine.nodes.logN_Node;
-import com.shaurya.spring.timecomplexityanalyzer.engine.nodes.rootNode;
+import com.shaurya.spring.timecomplexityanalyzer.engine.nodes.*;
 import lombok.Getter;
 
 import java.util.ArrayDeque;
@@ -37,12 +34,14 @@ public class Parser {
             if (checkTokenType(LBRACE)) {
                 stack.push(new LBraceNode());
             }
+            if (checkTokenType(WHILE)) {
+                stack.push(new WhileNode());
+            }
             if (checkTokenType(RBRACE)) {
                 helper();
             }
             advance();
         }
-        System.out.println("DEPTH: " + depth);
     }
 
     private void helper() {
@@ -50,18 +49,18 @@ public class Parser {
             stack.pop();
         }
         if (!stack.isEmpty()) stack.pop();//consume LBRACE
-
-        if ((stack.peek() instanceof ForNode) && !stack.isEmpty()) {
+        if (((stack.peek() instanceof ForNode) || (stack.peek() instanceof WhileNode)) && !stack.isEmpty()) {
             int depth = getCurrentDepth();
             this.depth = Math.max(this.depth, depth);
             stack.pop();
         }
+
     }
 
     private int getCurrentDepth() {
         int depth = 0;
         for (rootNode node : stack) {
-            if (node instanceof ForNode) {
+            if (node instanceof ForNode || node instanceof WhileNode) {
                 depth++;
             }
         }
