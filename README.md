@@ -12,7 +12,7 @@ This project analyzes pasted code and detects its time complexity — not by cal
 Paste a code snippet into the web UI, and the backend:
 1. Tokenizes it with a custom lexer
 2. Parses the tokens with a stack-based parser, tracking `{ }` nesting as it goes
-3. Classifies time complexity based on loop nesting depth (`for` loops currently; `while` support in progress)
+3. Classifies time complexity based on loop nesting depth (`for` and `while` loops supported) and loop update patterns (`i *= 2`, `i /= 2`, bit shifts)
 4. Stores every submission in MySQL
 5. Displays results instantly, with a full submission history page
 
@@ -32,21 +32,21 @@ Paste a code snippet into the web UI, and the backend:
 ```
 Raw code string
       ↓
-   Lexer.java        → tokenizes source into a List<Token>
+   Lexer.java         → tokenizes source into a List<Token>
       ↓
-   Parser.java        → stack-based parser; pushes a new block context on "{"
-                         and pops/attaches it on "}", tracking brace nesting
-                         depth directly during this process
+   Parser.java         → stack-based parser; pushes a new block context on "{"
+                          and pops/attaches it on "}", tracking brace nesting
+                          depth for both for and while loops; also detects
+                          log n operators (*=, /=, <<, >>) inside loop bodies
       ↓
-   ComplexityAnalyzer  → reads the resulting depth to classify complexity
+   ComplexityAnalyzer  → reads depth and logN flags to classify complexity
       ↓
    ComplexityResult    → { complexity, depth }
 ```
 
 **Current known limitations (being addressed):**
-- Complexity is currently derived from brace-nesting depth tracked during parsing itself, rather than a separate walk over a fully-built AST. This works for the common cases but is being refactored so `ComplexityAnalyzer` walks the tree independently — this will make consecutive-vs-nested loop detection more reliable.
-- Only `for` loops are currently detected. `while` loop support is planned next.
-- O(log n) and O(n log n) detection are not yet implemented — a loop with a dividing/shifting update (e.g. `i /= 2`) is currently still classified by nesting depth alone.
+- Complexity is currently derived from brace-nesting depth tracked during parsing itself, rather than a separate walk over a fully-built AST. This works for the common cases but is being refactored so `ComplexityAnalyzer` walks the tree independently.
+- Log n detection is token-based — any `*=`, `/=`, `<<`, `>>` inside a loop body is flagged, even if it's not the loop variable being modified. More precise detection planned for v2.
 - Recursive complexity detection (e.g. Fibonacci-style O(2ⁿ)) is planned as a future upgrade, along with multi-language support (C, JavaScript, Python).
 
 ## API Endpoints
@@ -69,7 +69,7 @@ The app is deployed as a Docker container on **Render**, connected to a free-tie
   spring.datasource.hikari.maximum-pool-size=2
   spring.datasource.hikari.minimum-idle=1
   ```
-- **Frontend pointed at localhost** — easy to miss: the deployed JS files must point `fetch()` calls at the live backend URL, not `http://localhost:8080`, or the live site will silently talk to whatever's running on your own machine instead of the deployed server.
+- **Frontend pointed at localhost** — easy to miss: the deployed JS files must point `fetch()` calls at the live backend URL, not `http://localhost:8080`.
 
 ## Project Structure
 
@@ -80,11 +80,8 @@ src/main/java/com/shaurya/spring/timecomplexityanalyzer/
 │   ├── Token.java
 │   ├── TokenType.java
 │   ├── Parser.java
-│   ├── ast/
-│   │   ├── Node.java
-│   │   ├── ForNode.java
-│   │   └── BlockNode.java
-│   └── ComplexityAnalyzer.java
+│   ├── ComplexityAnalyzer.java
+│   └── nodes/
 ├── controller/
 │   └── AnalysisController.java
 ├── service/
@@ -110,10 +107,10 @@ Dockerfile
 ## Running Locally
 
 ### Prerequisites
-- Java 17+ (project uses Java 25 features in places — check your local JDK version matches what's in `pom.xml`)
-- Maven (or use the included `mvnw`/`mvnw.cmd` wrapper — no separate install needed)
-- MySQL Server, running locally
-- IntelliJ IDEA (recommended) or any IDE with Spring Boot support
+- Java 25
+- Maven (or use the included `mvnw`/`mvnw.cmd` wrapper)
+- MySQL Server running locally
+- IntelliJ IDEA (recommended)
 
 ### 1. Clone the repository
 ```bash
@@ -122,57 +119,37 @@ cd time-complexity-analyzer
 ```
 
 ### 2. Create the database
-Open MySQL Workbench (or the MySQL CLI) and run:
 ```sql
 CREATE DATABASE tca_db;
 ```
 
-### 3. Configure your local credentials
-Copy the example properties file:
+### 3. Configure credentials
 ```bash
 cp src/main/resources/application.properties.example src/main/resources/application.properties
 ```
-Then open `application.properties` and fill in your actual MySQL username and password:
-```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/tca_db
-spring.datasource.username=root
-spring.datasource.password=YOUR_PASSWORD_HERE
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
-```
-This file is git-ignored on purpose — your real credentials never get committed.
+Fill in your MySQL credentials. This file is git-ignored.
 
-### 4. Run the backend
-Using the Maven wrapper:
-```bash
-./mvnw spring-boot:run
-```
-On Windows:
+### 4. Run
 ```powershell
 mvnw.cmd spring-boot:run
 ```
-Or just hit **Run** on `TimeComplexityAnalyzerApplication.java` in IntelliJ.
-
-The backend starts at `http://localhost:8080`. Hibernate will auto-create the table in `tca_db` on first run.
+Backend starts at `http://localhost:8080`.
 
 ### 5. Open the frontend
-Since the frontend lives in `src/main/resources/static/`, Spring Boot serves it directly. With the app running, open:
 ```
 http://localhost:8080/index.html
 ```
-in your browser. Paste code into the text area, hit **Analyze**, and check `http://localhost:8080/history.html` to see past submissions.
 
-### 6. Test the API directly (optional)
-Using Postman or curl:
+### 6. Test the API
 ```bash
 curl -X POST http://localhost:8080/api/analyze \
   -H "Content-Type: application/json" \
   -d '{"code": "for(int i=0;i<n;i++){ for(int j=0;j<n;j++){ } }"}'
 ```
 
-## Example Inputs to Try
+## Example Inputs
 
-**Nested loop — expect O(n²), depth 2:**
+**O(n²) — nested loops:**
 ```java
 for(int i = 0; i < n; i++){
     for(int j = 0; j < n; j++){
@@ -181,17 +158,13 @@ for(int i = 0; i < n; i++){
 }
 ```
 
-**Consecutive loops — expect O(n), depth 1:**
+**O(n) — consecutive loops:**
 ```java
-for(int i = 0; i < n; i++){
-    sum = sum + 1;
-}
-for(int j = 0; j < n; j++){
-    sum = sum + 1;
-}
+for(int i = 0; i < n; i++){ sum = sum + 1; }
+for(int j = 0; j < n; j++){ sum = sum + 1; }
 ```
 
-**Triple nested — expect O(n³), depth 3:**
+**O(n³) — triple nested:**
 ```java
 for(int i = 0; i < n; i++){
     for(int j = 0; j < n; j++){
@@ -202,17 +175,26 @@ for(int i = 0; i < n; i++){
 }
 ```
 
-> Note: loops with dividing/shifting updates (e.g. `i /= 2`) will currently still be classified by nesting depth alone — O(log n) detection is a planned v2 addition, not yet implemented.
+**O(log n) — dividing loop:**
+```java
+for(int i = 1; i < n; i *= 2) { }
+```
+
+**O(n log n) — outer linear, inner logarithmic:**
+```java
+for(int i = 0; i < n; i++){
+    for(int j = 1; j < n; j *= 2){ }
+}
+```
 
 ## Roadmap (v2)
 
-- Refactor `ComplexityAnalyzer` to walk a fully-built AST independently, rather than deriving depth during parsing
-- `while` loop detection and analysis
-- O(log n) / O(n log n) detection (loop update patterns like `i /= 2`, `i *= 2`, bit shifts)
-- Recursion detection (method declarations + self-referencing calls → O(2ⁿ), O(log n), etc.)
+- Refactor `ComplexityAnalyzer` to walk a fully-built AST independently
+- Precise log n detection — identify the actual loop variable instead of any `*=` in the body
+- Recursion detection (method declarations + self-referencing calls → O(2ⁿ), O(log n))
 - Multi-language support: hand-written lexers and parsers for C, JavaScript, and Python
-- Python indentation-based block detection (no `{ }` to rely on)
+- Python indentation-based block detection
 
 ## Status
 
-✅ Deployed and live at [time-complexity-analyzer-kaos.onrender.com](https://time-complexity-analyzer-kaos.onrender.com) — full pipeline (lexer → parser → complexity classification → REST API → MySQL → frontend with history) working end to end for `for`-loop nesting detection. `while` loop support and an independent AST-walking analyzer are the next things planned before calling this v1 complete.
+✅ Deployed and live at [time-complexity-analyzer-kaos.onrender.com](https://time-complexity-analyzer-kaos.onrender.com) — full pipeline working end to end. Detects O(1), O(n), O(n²), O(n³), O(log n), O(n log n) for `for` and `while` loops.
