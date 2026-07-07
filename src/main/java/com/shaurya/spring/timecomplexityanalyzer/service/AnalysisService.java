@@ -23,7 +23,7 @@ public class AnalysisService {
         lexer.scan();
 
         Parser parser = new Parser(lexer);
-        parser.parse();
+        parser.walk(parser.parse());
 
         ComplexityAnalyzer complexityAnalyzer = new ComplexityAnalyzer(parser);
 

@@ -1,14 +1,12 @@
 package com.shaurya.spring.timecomplexityanalyzer.engine;
 
-import com.shaurya.spring.timecomplexityanalyzer.engine.nodes.ForNode;
-import com.shaurya.spring.timecomplexityanalyzer.engine.nodes.LBraceNode;
-import com.shaurya.spring.timecomplexityanalyzer.engine.nodes.logN_Node;
-import com.shaurya.spring.timecomplexityanalyzer.engine.nodes.rootNode;
+import com.shaurya.spring.timecomplexityanalyzer.engine.nodes.*;
 import lombok.Getter;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.List;
 
 import static com.shaurya.spring.timecomplexityanalyzer.engine.TokenType.*;
 
@@ -28,62 +26,101 @@ public class Parser {
         this.lexer = lexer;
     }
 
-    public void parse() {
-        stack.push(new LBraceNode());
-        while (current < lexer.tokens.size()) {
-            if (checkTokenType(FOR)) {
-                stack.push(new ForNode());
+    public rootNode parse() {
+        if (checkTokenType(FOR)) {
+            return parseFor();
+        }
+        if (checkTokenType(LBRACE)) {
+            return parseBlock();
+        }
+        if (checkTokenType(WHILE)) {
+            return parseWhile();
+        } else {
+            advance();
+        }
+        return null;
+    }
+
+    public void walk(rootNode node) {
+        if (node instanceof ForNode) {
+            int currentDepth = depth + 1;
+            depth = Math.max(depth, currentDepth);
+            System.out.println(depth);
+            walk(((ForNode) node).getBody());
+        }
+        if (node instanceof BlockNode) {
+            System.out.println("I AM INSIDE BLOCK");
+            for (rootNode children : ((BlockNode) node).getChildren()) {
+                walk(children);
             }
-            if (checkTokenType(LBRACE)) {
-                stack.push(new LBraceNode());
-            }
-            if (checkTokenType(RBRACE)) {
-                helper();
+        }
+        if (node instanceof WhileNode) {
+            int currentDepth = depth + 1;
+            depth = Math.max(depth, currentDepth);
+            System.out.println(depth);
+            walk(((WhileNode) node).getBody());
+        } else {
+            System.out.println("EXITING");
+        }
+    }
+
+    private rootNode parseFor() {
+        //boolean for log(n) determination
+        boolean flag = false;
+        //consume for
+        advance();
+        //TODO:init for
+        //consume till RParen
+        while (!checkTokenType(RPAREN)) {
+            if (isLogarithm()) {
+                flag = true;
             }
             advance();
         }
-        System.out.println("DEPTH: " + depth);
+        advance();
+        //start parseBlock
+        rootNode body = parseBlock();
+        return new ForNode(body, flag);
     }
 
-    private void helper() {
-        while (!(stack.peek() instanceof LBraceNode) && !stack.isEmpty()) {
-            stack.pop();
+    private rootNode parseBlock() {
+        List<rootNode> children = new ArrayList<>();
+        //consume LBrace
+        advance();
+        //recurse parse until RBrace
+        while (!checkTokenType(RBRACE)) {
+            children.add(parse());
         }
-        if (!stack.isEmpty()) stack.pop();//consume LBRACE
-
-        if ((stack.peek() instanceof ForNode) && !stack.isEmpty()) {
-            int depth = getCurrentDepth();
-            this.depth = Math.max(this.depth, depth);
-            stack.pop();
-        }
+        //consume RBrace
+        advance();
+        return new BlockNode(children);
     }
 
-    private int getCurrentDepth() {
-        int depth = 0;
-        for (rootNode node : stack) {
-            if (node instanceof ForNode) {
-                depth++;
-            }
+    private rootNode parseWhile() {
+        //consume while
+        advance();
+        //consume till RParen
+        while (!checkTokenType(RPAREN)) {
+            advance();
         }
-        return depth;
-    }
-
-    //helper fxn
-    public void print() {
-        System.out.println("------------------");
-        for (rootNode node : stack) {
-            System.out.println(node.toString());
-        }
-        System.out.println("------------------");
+        advance();
+        //start parseBlock
+        rootNode body = parseBlock();
+        return new WhileNode(body);
     }
 
     //increment current
     private void advance() {
-        current++;
+        current = (current < lexer.tokens.size() - 1) ? current + 1 : current;
     }
 
     //return true if current token type matches given token
     private boolean checkTokenType(TokenType type) {
         return lexer.tokens.get(current).type.equals(type);
+    }
+
+    private boolean isLogarithm() {
+        return checkTokenType(DIVIDE_ASSIGN) || checkTokenType(MULTIPLY_ASSIGN) ||
+                checkTokenType(SHIFT_LEFT) || checkTokenType(SHIFT_RIGHT);
     }
 }

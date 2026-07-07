@@ -12,5 +12,6 @@ public class ComplexityAnalyzer {
             case 0 -> new ComplexityResult("O(1)",String.valueOf(parser.depth));
             default -> new ComplexityResult("O(n^" + parser.getDepth() + ")",String.valueOf(parser.depth));
         };
+
     }
 }
