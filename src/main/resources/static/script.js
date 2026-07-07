@@ -11,7 +11,6 @@ analyzeButton.addEventListener("click", () => {
     outputSection.scrollIntoView({ behavior: "smooth" });
 
     const code = document.getElementById("inputArea").value;
-
     fetch("http://localhost:8080/api/analyze", {
         method: "POST",
         headers: {

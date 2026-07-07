@@ -1,5 +1,6 @@
 package com.shaurya.spring.timecomplexityanalyzer.engine.nodes;
 
+<<<<<<< HEAD
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,4 +16,7 @@ public class WhileNode implements rootNode{
         this.body = body;
         this.isLogN = false;
     }
+=======
+public class WhileNode implements rootNode{
+>>>>>>> origin/main
 }

@@ -26,6 +26,7 @@ public class Parser {
         this.lexer = lexer;
     }
 
+<<<<<<< HEAD
     public rootNode parse() {
         if (checkTokenType(FOR)) {
             return parseFor();
@@ -102,6 +103,56 @@ public class Parser {
         //consume till RParen
         while (!checkTokenType(RPAREN)) {
             advance();
+=======
+    public void parse() {
+        stack.push(new LBraceNode());
+        while (current < lexer.tokens.size()) {
+            if (checkTokenType(MULTIPLY_ASSIGN) || checkTokenType(DIVIDE_ASSIGN)
+                    || checkTokenType(SHIFT_LEFT) || checkTokenType(SHIFT_RIGHT)) {
+                // only flag if we're inside a loop — check if stack has a ForNode or WhileNode
+                for (rootNode node : stack) {
+                    if (node instanceof ForNode || node instanceof WhileNode) {
+                        logN.add(getCurrentDepth());
+                        break;
+                    }
+                }
+            }
+            if (checkTokenType(FOR)) {
+                stack.push(new ForNode());
+            }
+            if (checkTokenType(LBRACE)) {
+                stack.push(new LBraceNode());
+            }
+            if (checkTokenType(WHILE)) {
+                stack.push(new WhileNode());
+            }
+            if (checkTokenType(RBRACE)) {
+                helper();
+            }
+            advance();
+        }
+    }
+
+    private void helper() {
+        while (!(stack.peek() instanceof LBraceNode) && !stack.isEmpty()) {
+            stack.pop();
+        }
+        if (!stack.isEmpty()) stack.pop();//consume LBRACE
+        if (((stack.peek() instanceof ForNode) || (stack.peek() instanceof WhileNode)) && !stack.isEmpty()) {
+            int depth = getCurrentDepth();
+            this.depth = Math.max(this.depth, depth);
+            stack.pop();
+        }
+
+    }
+
+    private int getCurrentDepth() {
+        int depth = 0;
+        for (rootNode node : stack) {
+            if (node instanceof ForNode || node instanceof WhileNode) {
+                depth++;
+            }
+>>>>>>> origin/main
         }
         advance();
         //start parseBlock
