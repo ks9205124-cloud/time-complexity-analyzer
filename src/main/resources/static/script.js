@@ -11,7 +11,7 @@ analyzeButton.addEventListener("click", () => {
     outputSection.scrollIntoView({ behavior: "smooth" });
 
     const code = document.getElementById("inputArea").value;
-    fetch("https://time-complexity-analyzer-kaos.onrender.com/api/analyze", {
+    fetch("http://localhost:8080/api/analyze", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"

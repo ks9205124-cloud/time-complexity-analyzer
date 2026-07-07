@@ -7,10 +7,16 @@ public class ComplexityAnalyzer {
     public ComplexityAnalyzer(Parser parser) {
         this.parser = parser;
     }
-    public ComplexityResult result(){
-        return switch (parser.depth) {
-            case 0 -> new ComplexityResult("O(1)",String.valueOf(parser.depth));
-            default -> new ComplexityResult("O(n^" + parser.getDepth() + ")",String.valueOf(parser.depth));
+    public ComplexityResult result() {
+        boolean hasLogN = !parser.logN.isEmpty();
+        int depth = parser.getDepth();
+
+        if (hasLogN && depth <= 1) return new ComplexityResult("O(log n)",String.valueOf(parser.getDepth()));
+        if (hasLogN && depth == 2) return new ComplexityResult("O(n log n)",String.valueOf(parser.getDepth()));
+        return switch (depth) {
+            case 0 -> new ComplexityResult("O(1)",String.valueOf(parser.getDepth()));
+            case 1 -> new ComplexityResult("O(n)",String.valueOf(parser.getDepth()));
+            default -> new ComplexityResult("O(n^" + depth + ")",String.valueOf(parser.getDepth()));
         };
     }
 }

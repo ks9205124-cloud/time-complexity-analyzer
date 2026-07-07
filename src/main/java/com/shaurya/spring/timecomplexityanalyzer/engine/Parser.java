@@ -28,6 +28,16 @@ public class Parser {
     public void parse() {
         stack.push(new LBraceNode());
         while (current < lexer.tokens.size()) {
+            if (checkTokenType(MULTIPLY_ASSIGN) || checkTokenType(DIVIDE_ASSIGN)
+                    || checkTokenType(SHIFT_LEFT) || checkTokenType(SHIFT_RIGHT)) {
+                // only flag if we're inside a loop — check if stack has a ForNode or WhileNode
+                for (rootNode node : stack) {
+                    if (node instanceof ForNode || node instanceof WhileNode) {
+                        logN.add(getCurrentDepth());
+                        break;
+                    }
+                }
+            }
             if (checkTokenType(FOR)) {
                 stack.push(new ForNode());
             }
