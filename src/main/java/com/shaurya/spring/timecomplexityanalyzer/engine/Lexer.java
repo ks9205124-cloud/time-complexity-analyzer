@@ -28,6 +28,7 @@ public class Lexer {
     // Scans source for tokens
     public List<Token> scan() {
         // Traverses until end of source
+        tokens.add(new Token("{",LBRACE));
         while (current < source.length()) {
             //increment current until a meaningful token is formed
             while (current < source.length() && isTriggerChar(source.charAt(current))) {
@@ -55,7 +56,7 @@ public class Lexer {
             current++;
             start = current;
         }
-        tokens.add(new Token("rBrace",RBRACE));
+        tokens.add(new Token("}",RBRACE));
         return tokens;
     }
 
