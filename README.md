@@ -1,8 +1,8 @@
-# Time Complexity Analyzer.
+# Time Complexity Analyzer
 
 ## About
 
-This project analyzes pasted code and detects its time complexity — not by calling an existing parsing library, but by building the entire pipeline from scratch: a hand-written lexer, a custom stack-based parser, and a complexity-detection engine written on top of it. It started as a way to actually understand how compilers reason about code (scanning, tokens, nesting) rather than just using a tool like ANTLR without knowing what's happening underneath. It's also a full-stack Spring Boot project end to end — REST API, MySQL persistence, and a plain HTML/CSS/JS frontend with submission history — deployed live rather than left running only on localhost.
+This project analyzes pasted code and detects its time complexity — not by calling an existing parsing library, but by building the entire pipeline from scratch: a hand-written lexer, a recursive descent parser that builds a real AST, and a tree-walking complexity engine on top of it. It started as a way to actually understand how compilers reason about code (scanning, tokens, parsing, tree walking) rather than just using a tool like ANTLR without knowing what's happening underneath. It's also a full-stack Spring Boot project end to end — REST API, MySQL persistence, and a plain HTML/CSS/JS frontend with submission history — deployed live rather than left running only on localhost.
 
 **Live demo:** [https://time-complexity-analyzer-kaos.onrender.com](https://time-complexity-analyzer-kaos.onrender.com)
 *(hosted on Render's free tier — the backend may take 30–60 seconds to wake up if it's been idle)*
@@ -10,11 +10,12 @@ This project analyzes pasted code and detects its time complexity — not by cal
 ## What it does
 
 Paste a code snippet into the web UI, and the backend:
-1. Tokenizes it with a custom lexer
-2. Parses the tokens with a stack-based parser, tracking `{ }` nesting as it goes
-3. Classifies time complexity based on loop nesting depth (`for` and `while` loops supported) and loop update patterns (`i *= 2`, `i /= 2`, bit shifts)
-4. Stores every submission in MySQL
-5. Displays results instantly, with a full submission history page
+1. Tokenizes it with a custom hand-written lexer
+2. Parses the token stream with a recursive descent parser that builds a real AST (`ForNode`, `WhileNode`, `BlockNode`)
+3. Walks the AST to calculate maximum loop nesting depth and detect logarithmic update patterns
+4. Classifies time complexity — O(1), O(n), O(n²), O(n³), O(log n), O(n log n) — for `for` and `while` loops
+5. Stores every submission in MySQL
+6. Displays results instantly, with a full submission history page
 
 ## Tech Stack
 
@@ -23,7 +24,7 @@ Paste a code snippet into the web UI, and the backend:
 | Backend | Spring Boot (REST API) |
 | Database | MySQL + Spring Data JPA |
 | Frontend | HTML + CSS + vanilla JS |
-| Analysis Engine | Hand-written Java lexer + stack-based parser + brace-depth complexity classifier |
+| Analysis Engine | Hand-written lexer → recursive descent AST parser → tree-walking complexity analyzer |
 | Build Tool | Maven |
 | Hosting | [Render](https://render.com) (backend, Docker-based deploy) + [filess.io](https://filess.io) (free-tier MySQL) |
 
@@ -32,22 +33,29 @@ Paste a code snippet into the web UI, and the backend:
 ```
 Raw code string
       ↓
-   Lexer.java         → tokenizes source into a List<Token>
+   Lexer.java          → tokenizes source into List<Token>
+                          strips comments, handles two-char operators with peek-ahead
+                          wraps source in { } so parser always has a root block
       ↓
-   Parser.java         → stack-based parser; pushes a new block context on "{"
-                          and pops/attaches it on "}", tracking brace nesting
-                          depth for both for and while loops; also detects
-                          log n operators (*=, /=, <<, >>) inside loop bodies
+   Parser.java          → recursive descent parser
+                          parseBlock() → parseFor() / parseWhile() → parseBlock() (recursive)
+                          builds a real AST: ForNode, WhileNode, BlockNode
+                          detects log n operators (*=, /=, <<, >>) and stores flag on each node
       ↓
-   ComplexityAnalyzer  → reads depth and logN flags to classify complexity
+   Parser.walk()        → tree walker, separate from parsing
+                          tracks currDepth and maxDepth as it recurses into the AST
+                          depth++ on entering ForNode/WhileNode, depth-- on exit
+                          consecutive loops handled correctly — depth resets after each
       ↓
-   ComplexityResult    → { complexity, depth }
+   ComplexityAnalyzer   → reads maxDepth and logN flags to classify complexity
+      ↓
+   ComplexityResult     → { complexity, depth }
 ```
 
-**Current known limitations (being addressed):**
-- Complexity is currently derived from brace-nesting depth tracked during parsing itself, rather than a separate walk over a fully-built AST. This works for the common cases but is being refactored so `ComplexityAnalyzer` walks the tree independently.
-- Log n detection is token-based — any `*=`, `/=`, `<<`, `>>` inside a loop body is flagged, even if it's not the loop variable being modified. More precise detection planned for v2.
-- Recursive complexity detection (e.g. Fibonacci-style O(2ⁿ)) is planned as a future upgrade, along with multi-language support (C, JavaScript, Python).
+**Current known limitations:**
+- Log n detection is token-based — any `*=`, `/=`, `<<`, `>>` inside a loop body is flagged, even if it's not the loop variable. Precise detection planned for v2.
+- Only iterative complexity is detected. Recursive complexity (e.g. Fibonacci O(2ⁿ)) requires method declaration and call tracking — planned for v2.
+- Only Java syntax supported. Multi-language support (C, JavaScript, Python) planned for v2.
 
 ## API Endpoints
 
@@ -58,18 +66,18 @@ Raw code string
 
 ## Deployment
 
-The app is deployed as a Docker container on **Render**, connected to a free-tier **MySQL instance on filess.io**. A few real constraints from getting this working, worth knowing if you're deploying your own fork:
+The app is deployed as a Docker container on **Render**, connected to a free-tier **MySQL instance on filess.io**. A few real constraints from getting this working:
 
-- **`mvnw` executable bit** — Git doesn't always preserve the Unix executable permission when committed from Windows. Fixed with `git update-index --chmod=+x mvnw` and a `.gitattributes` rule (`mvnw text eol=lf`) to keep line endings consistent. The Dockerfile also runs `chmod +x mvnw` as a backup.
-- **DB credentials via environment variables** — `application.properties` references `${DB_URL}`, `${DB_USERNAME}`, `${DB_PASSWORD}` rather than hardcoded values; the real values are set in Render's Environment tab, not committed to Git.
-- **Hibernate dialect** — explicitly set `spring.jpa.database-platform=org.hibernate.dialect.MySQLDialect` since auto-detection failed against filess.io without it.
-- **SSL connection params** — filess.io's JDBC URL needs `?useSSL=true&requireSSL=false&serverTimezone=UTC` appended.
-- **Connection pool size** — filess.io's free tier caps connections at 5 total for the DB user. Spring Boot's default HikariCP pool (10 connections) exceeds that immediately. Capped with:
+- **`mvnw` executable bit** — Git doesn't always preserve the Unix executable permission when committed from Windows. Fixed with `git update-index --chmod=+x mvnw` and a `.gitattributes` rule (`mvnw text eol=lf`). The Dockerfile also runs `chmod +x mvnw` as a backup.
+- **DB credentials via environment variables** — `application.properties` references `${DB_URL}`, `${DB_USERNAME}`, `${DB_PASSWORD}`; real values set in Render's Environment tab, never committed to Git.
+- **Hibernate dialect** — explicitly set `spring.jpa.database-platform=org.hibernate.dialect.MySQLDialect` since auto-detection failed against filess.io.
+- **SSL connection params** — filess.io JDBC URL needs `?useSSL=true&requireSSL=false&serverTimezone=UTC`.
+- **Connection pool size** — filess.io free tier caps at 5 connections. Capped HikariCP:
   ```properties
   spring.datasource.hikari.maximum-pool-size=2
   spring.datasource.hikari.minimum-idle=1
   ```
-- **Frontend pointed at localhost** — easy to miss: the deployed JS files must point `fetch()` calls at the live backend URL, not `http://localhost:8080`.
+- **Frontend fetch URL** — deployed JS must point to the live backend URL, not `http://localhost:8080`.
 
 ## Project Structure
 
@@ -82,6 +90,10 @@ src/main/java/com/shaurya/spring/timecomplexityanalyzer/
 │   ├── Parser.java
 │   ├── ComplexityAnalyzer.java
 │   └── nodes/
+│       ├── rootNode.java
+│       ├── ForNode.java
+│       ├── WhileNode.java
+│       └── BlockNode.java
 ├── controller/
 │   └── AnalysisController.java
 ├── service/
@@ -108,11 +120,11 @@ Dockerfile
 
 ### Prerequisites
 - Java 25
-- Maven (or use the included `mvnw`/`mvnw.cmd` wrapper)
+- Maven (or use `mvnw`/`mvnw.cmd` wrapper)
 - MySQL Server running locally
 - IntelliJ IDEA (recommended)
 
-### 1. Clone the repository
+### 1. Clone
 ```bash
 git clone https://github.com/ks9205124-cloud/time-complexity-analyzer.git
 cd time-complexity-analyzer
@@ -127,15 +139,15 @@ CREATE DATABASE tca_db;
 ```bash
 cp src/main/resources/application.properties.example src/main/resources/application.properties
 ```
-Fill in your MySQL credentials. This file is git-ignored.
+Fill in your MySQL credentials. File is git-ignored.
 
 ### 4. Run
 ```powershell
 mvnw.cmd spring-boot:run
 ```
-Backend starts at `http://localhost:8080`.
+Backend at `http://localhost:8080`.
 
-### 5. Open the frontend
+### 5. Open frontend
 ```
 http://localhost:8080/index.html
 ```
@@ -149,6 +161,25 @@ curl -X POST http://localhost:8080/api/analyze \
 
 ## Example Inputs
 
+**O(1) — no loops:**
+```java
+int x = 5;
+int y = x + 10;
+```
+
+**O(n) — single loop:**
+```java
+for(int i = 0; i < n; i++) {
+    System.out.println(i);
+}
+```
+
+**O(n) — consecutive loops (correctly detected, not O(n²)):**
+```java
+for(int i = 0; i < n; i++) { }
+for(int j = 0; j < n; j++) { }
+```
+
 **O(n²) — nested loops:**
 ```java
 for(int i = 0; i < n; i++){
@@ -156,12 +187,6 @@ for(int i = 0; i < n; i++){
         sum = sum + 1;
     }
 }
-```
-
-**O(n) — consecutive loops:**
-```java
-for(int i = 0; i < n; i++){ sum = sum + 1; }
-for(int j = 0; j < n; j++){ sum = sum + 1; }
 ```
 
 **O(n³) — triple nested:**
@@ -175,9 +200,14 @@ for(int i = 0; i < n; i++){
 }
 ```
 
-**O(log n) — dividing loop:**
+**O(log n) — dividing for loop:**
 ```java
 for(int i = 1; i < n; i *= 2) { }
+```
+
+**O(log n) — dividing while loop:**
+```java
+while(i < n) { i *= 2; }
 ```
 
 **O(n log n) — outer linear, inner logarithmic:**
@@ -189,12 +219,15 @@ for(int i = 0; i < n; i++){
 
 ## Roadmap (v2)
 
-- Refactor `ComplexityAnalyzer` to walk a fully-built AST independently
-- Precise log n detection — identify the actual loop variable instead of any `*=` in the body
-- Recursion detection (method declarations + self-referencing calls → O(2ⁿ), O(log n))
-- Multi-language support: hand-written lexers and parsers for C, JavaScript, and Python
-- Python indentation-based block detection
+- Precise log n detection — check actual loop variable, not any `*=` in the body
+- Recursion detection — method declarations + self-referencing calls → O(2ⁿ), O(log n)
+- Multi-language support — hand-written lexers and parsers for C, JavaScript, and Python
+- Python indentation-based block detection (no `{ }` to rely on)
 
 ## Status
 
-✅ Deployed and live at [time-complexity-analyzer-kaos.onrender.com](https://time-complexity-analyzer-kaos.onrender.com) — full pipeline working end to end. Detects O(1), O(n), O(n²), O(n³), O(log n), O(n log n) for `for` and `while` loops.
+✅ Deployed and live at [time-complexity-analyzer-kaos.onrender.com](https://time-complexity-analyzer-kaos.onrender.com)
+
+Full pipeline working end to end: hand-written lexer → recursive descent AST parser → tree-walking complexity analyzer → REST API → MySQL → frontend with submission history.
+
+Detects O(1), O(n), O(n²), O(n³), O(log n), O(n log n) for `for` and `while` loops. Consecutive vs nested loops handled correctly via proper AST tree walking. Recursive complexity detection planned for v2.
