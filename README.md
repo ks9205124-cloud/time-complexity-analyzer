@@ -1,4 +1,4 @@
-# Time Complexity Analyzer
+# Time Complexity Analyzer.
 
 ## About
 
