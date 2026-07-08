@@ -28,7 +28,7 @@ public class Lexer {
     // Scans source for tokens
     public List<Token> scan() {
         // Traverses until end of source
-        tokens.add(new Token("{",LBRACE));
+        tokens.add(new Token("{", LBRACE));
         while (current < source.length()) {
             //increment current until a meaningful token is formed
             while (current < source.length() && isTriggerChar(source.charAt(current))) {
@@ -56,7 +56,7 @@ public class Lexer {
             current++;
             start = current;
         }
-        tokens.add(new Token("}",RBRACE));
+        tokens.add(new Token("}", RBRACE));
         return tokens;
     }
 
@@ -64,6 +64,7 @@ public class Lexer {
     private boolean isTriggerChar(char c) {
         return Character.isLetterOrDigit(c);
     }
+
     // Returns true if two consecutive chars form a valid two-char operator
     private boolean isTwoCharOperator(char first, char second) {
         return switch (first) {
@@ -77,6 +78,7 @@ public class Lexer {
             default -> false;
         };
     }
+
     // Maps a lexeme to its corresponding token type
     private TokenType matchToken(String lexeme) {
         switch (lexeme) {
@@ -108,18 +110,22 @@ public class Lexer {
                 return SHIFT_LEFT;
             case ">>":
                 return SHIFT_RIGHT;
+            case "<", "<=", "==", ">=", ">", "!=":
+                return CONDITION;
             default:
                 if (lexeme.chars().allMatch(Character::isDigit)) return NUMBER;
                 if (lexeme.chars().allMatch(Character::isLetterOrDigit)) return IDENTIFIER;
                 return OTHER;
         }
     }
+
     // Logs all identified tokens for debugging
     public void printTokens() {
         for (Token token : tokens) {
             logger.info(token.toString());
         }
     }
+
     //Removes comments from the source string
     private String stripComments(String source) {
         StringBuilder result = new StringBuilder();
@@ -129,15 +135,13 @@ public class Lexer {
                 while (i < source.length() && source.charAt(i) != '\n') {
                     i++;
                 }
-            }
-            else if (i + 1 < source.length() && source.charAt(i) == '/' && source.charAt(i + 1) == '*') {
+            } else if (i + 1 < source.length() && source.charAt(i) == '/' && source.charAt(i + 1) == '*') {
                 i += 2;
                 while (i + 1 < source.length() && !(source.charAt(i) == '*' && source.charAt(i + 1) == '/')) {
                     i++;
                 }
                 i += 2;
-            }
-            else {
+            } else {
                 result.append(source.charAt(i));
                 i++;
             }

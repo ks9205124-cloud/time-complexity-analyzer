@@ -16,6 +16,9 @@ public enum TokenType {
     LPAREN,     // (
     RPAREN,     // )
 
+    //condition
+    CONDITION,
+
     // --- Log n detectors ---
     PLUS_PLUS,
     MINUS_MINUS,

@@ -41,31 +41,43 @@ public class Parser {
 
     // Tree walker to calculate the maximum nested loop depth
     public void walk(rootNode node) {
+        //  if instance is of FOR
         if (node instanceof ForNode) {
+            //  increment current depth
             currDepth++;
+            //  check for sibling loops and calc the weight of each sibling (n>log(n))
             if (currDepth > maxDepth) {
                 logList.add(((ForNode) node).isLogN() ? 1 : 0);
             } else {
                 if (!((ForNode) node).isLogN())
                     logList.set(currDepth - 1, 0);
             }
+            //  handles sibling loops
             maxDepth = Math.max(maxDepth, currDepth);
+            System.out.println(((ForNode) node).isLogN());
             walk(((ForNode) node).getBody());
+            //  decrement current depth
             currDepth--;
         }
+        //  if instance is of WHILE
         if (node instanceof WhileNode) {
+            //  increment current depth
             currDepth++;
+            //  check for sibling loops and calc the weight of each sibling (n>log(n))
             if (currDepth > maxDepth) {
-                //delthList.add(1);
                 logList.add(((WhileNode) node).isLogN() ? 1 : 0);
             } else {
                 if (!((WhileNode) node).isLogN())
                     logList.set(currDepth - 1, 0);
             }
+            //  handles sibling loops
             maxDepth = Math.max(maxDepth, currDepth);
+            System.out.println(((WhileNode) node).isLogN());
             walk(((WhileNode) node).getBody());
+            //  decrement current depth
             currDepth--;
         }
+        //  if instance if of LBRACE
         if (node instanceof BlockNode) {
             for (rootNode children : ((BlockNode) node).getChildren()) {
                 walk(children);
@@ -74,19 +86,18 @@ public class Parser {
     }
 
     private rootNode parseFor() {
+        Token type = null;
         boolean flag = false; // flag for log(n) determination
         advance(); // consume 'for'
 
         // consume condition tokens up to the closing RPAREN
-        while (!checkTokenType(RPAREN)) {
-            if (isLogarithm()) {
-                flag = true;
-            }
+        while (!checkTokenType(LBRACE)) {
+            if (isLogarithm() && type.lexeme.equals(getLexer().tokens.get(getPrev()).lexeme)) flag = true;
+            if (isIncrement()) type = getLexer().tokens.get(getPrev());
             advance();
         }
-        advance(); // consume RPAREN
 
-        ForNode forNode = new ForNode(null, flag);
+        ForNode forNode = new ForNode(null, flag, type);
         rootNode body = parseBlock(forNode);
         forNode.setBody(body);
         return forNode;
@@ -98,10 +109,10 @@ public class Parser {
 
         // recursively parse internal components until hitting matching RBRACE
         while (!checkTokenType(RBRACE)) {
-            if (isLogarithm() && parent instanceof WhileNode) {
+            if (isLogarithm() && parent instanceof WhileNode && ((WhileNode) parent).getVar().lexeme.equals(getLexer().tokens.get(getPrev()).lexeme)) {
                 ((WhileNode) parent).setLogN(true);
             }
-            if (isLogarithm() && parent instanceof ForNode) {
+            if (isLogarithm() && parent instanceof ForNode && ((ForNode) parent).getVar().lexeme.equals(getLexer().tokens.get(getPrev()).lexeme)) {
                 ((ForNode) parent).setLogN(true);
             }
             children.add(parse());
@@ -111,15 +122,16 @@ public class Parser {
     }
 
     private rootNode parseWhile() {
+        Token type = null;
         advance(); // consume 'while'
 
-        // consume condition tokens up to the closing RPAREN
-        while (!checkTokenType(RPAREN)) {
+        // consume condition tokens up to the closing LBrace
+        while (!checkTokenType(LBRACE)) {
+            if (isIncrement()) type = getLexer().tokens.get(getPrev());
             advance();
         }
-        advance(); // consume RPAREN
 
-        WhileNode whileNode = new WhileNode(null, false);
+        WhileNode whileNode = new WhileNode(null, false, type);
         rootNode body = parseBlock(whileNode);
         whileNode.setBody(body);
         return whileNode;
@@ -129,6 +141,10 @@ public class Parser {
         current = (current < lexer.tokens.size() - 1) ? current + 1 : current;
     }
 
+    private int getPrev() {
+        return (current == 0) ? 0 : current - 1;
+    }
+
     private boolean checkTokenType(TokenType type) {
         return lexer.tokens.get(current).type.equals(type);
     }
@@ -136,5 +152,9 @@ public class Parser {
     private boolean isLogarithm() {
         return checkTokenType(DIVIDE_ASSIGN) || checkTokenType(MULTIPLY_ASSIGN) ||
                 checkTokenType(SHIFT_LEFT) || checkTokenType(SHIFT_RIGHT);
+    }
+
+    private boolean isIncrement() {
+        return checkTokenType(CONDITION);
     }
 }

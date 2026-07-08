@@ -5,7 +5,7 @@ function escapeHtml(str) {
 }
 
 function loadHistory() {
-    fetch("https://time-complexity-analyzer-kaos.onrender.com/api/submissions")
+    fetch("http://localhost:8080/api/submissions")
         .then(res => res.json())
         .then(data => {
             const tbody = document.getElementById("historyBody");
