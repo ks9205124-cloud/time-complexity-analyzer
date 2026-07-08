@@ -13,19 +13,5 @@ public class TimeComplexityAnalyzerApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(TimeComplexityAnalyzerApplication.class, args);
-
-        Lexer lexer = new Lexer("for(++){" +
-                "for(/=){" +
-                "}" +
-                "for(++){" +
-                "}" +
-                "}");
-        lexer.scan();
-        Parser parser = new Parser(lexer);
-        var t = parser.parse();
-        parser.walk(t);
-
-        //System.out.println(parser.getDelthList());
-        System.out.println(parser.getLogList());
     }
 }

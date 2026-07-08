@@ -16,11 +16,9 @@ public class ComplexityAnalyzer {
                 sb.append("*log(n)");
             }
         }
-        //boolean hasLogN = !parser.logN.isEmpty();
+
         int depth = parser.getMaxDepth();
 
-        //if (hasLogN && depth <= 1) return new ComplexityResult("O(log n)",String.valueOf(parser.getDepth()));
-        //if (hasLogN && depth == 2) return new ComplexityResult("O(n log n)",String.valueOf(parser.getDepth()));
         return switch (depth) {
             case 0 -> new ComplexityResult("O(1)",String.valueOf(depth));
             default -> new ComplexityResult("O(1"+sb.toString()+")",String.valueOf(depth));
