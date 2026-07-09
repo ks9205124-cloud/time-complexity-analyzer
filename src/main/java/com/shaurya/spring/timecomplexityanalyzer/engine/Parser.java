@@ -93,7 +93,7 @@ public class Parser {
         // consume condition tokens up to the closing RPAREN
         while (!checkTokenType(LBRACE)) {
             if (isLogarithm() && type.lexeme.equals(getLexer().tokens.get(getPrev()).lexeme)) flag = true;
-            if (isIncrement()) type = getLexer().tokens.get(getPrev());
+            if (isComparison()) type = getLexer().tokens.get(getPrev());
             advance();
         }
 
@@ -127,7 +127,7 @@ public class Parser {
 
         // consume condition tokens up to the closing LBrace
         while (!checkTokenType(LBRACE)) {
-            if (isIncrement()) type = getLexer().tokens.get(getPrev());
+            if (isComparison()) type = getLexer().tokens.get(getPrev());
             advance();
         }
 
@@ -154,7 +154,9 @@ public class Parser {
                 checkTokenType(SHIFT_LEFT) || checkTokenType(SHIFT_RIGHT);
     }
 
-    private boolean isIncrement() {
-        return checkTokenType(CONDITION);
+    private boolean isComparison() {
+        return checkTokenType(LESS) || checkTokenType(LESS_EQUAL) ||
+                checkTokenType(GREATER) || checkTokenType(GREATER_EQUAL) ||
+                checkTokenType(EQUAL) || checkTokenType(NOT_EQUAL);
     }
 }

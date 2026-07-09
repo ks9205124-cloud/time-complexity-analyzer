@@ -2,6 +2,7 @@ const analyzeButton = document.getElementById("analyzeButton");
 const outputSection = document.getElementById("outputSection");
 const navLinks = document.querySelectorAll(".navlinks a");
 
+const API_BASE_URL = window.API_BASE_URL || "http://localhost:8080";
 const ding = new Audio("Windows_10_ding.mp3");
 ding.volume = .05;
 analyzeButton.addEventListener("click", () => {
@@ -11,7 +12,7 @@ analyzeButton.addEventListener("click", () => {
     outputSection.scrollIntoView({ behavior: "smooth" });
 
     const code = document.getElementById("inputArea").value;
-    fetch("http://localhost:8080/api/analyze", {
+    fetch("https://time-complexity-analyzer-kaos.onrender.com/api/analyze", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"

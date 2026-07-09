@@ -16,8 +16,13 @@ public enum TokenType {
     LPAREN,     // (
     RPAREN,     // )
 
-    //condition
-    CONDITION,
+    // --- Comparison operators ---
+    LESS,           //
+    LESS_EQUAL,     // <=
+    GREATER,        // >
+    GREATER_EQUAL,  // >=
+    EQUAL,          // ==
+    NOT_EQUAL,      // !=
 
     // --- Log n detectors ---
     PLUS_PLUS,

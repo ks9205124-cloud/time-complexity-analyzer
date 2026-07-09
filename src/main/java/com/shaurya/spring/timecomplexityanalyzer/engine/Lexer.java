@@ -81,42 +81,31 @@ public class Lexer {
 
     // Maps a lexeme to its corresponding token type
     private TokenType matchToken(String lexeme) {
-        switch (lexeme) {
-            // Keywords
-            case "for":
-                return FOR;
-            case "while":
-                return WHILE;
-            // Structural
-            case "{":
-                return LBRACE;
-            case "}":
-                return RBRACE;
-            case "(":
-                return LPAREN;
-            case ")":
-                return RPAREN;
-
-            // Log n detectors
-            case "++":
-                return PLUS_PLUS;
-            case "--":
-                return MINUS_MINUS;
-            case "/=":
-                return DIVIDE_ASSIGN;
-            case "*=":
-                return MULTIPLY_ASSIGN;
-            case "<<":
-                return SHIFT_LEFT;
-            case ">>":
-                return SHIFT_RIGHT;
-            case "<", "<=", "==", ">=", ">", "!=":
-                return CONDITION;
-            default:
-                if (lexeme.chars().allMatch(Character::isDigit)) return NUMBER;
-                if (lexeme.chars().allMatch(Character::isLetterOrDigit)) return IDENTIFIER;
-                return OTHER;
-        }
+        return switch (lexeme) {
+            case "for" -> FOR;
+            case "while" -> WHILE;
+            case "{" -> LBRACE;
+            case "}" -> RBRACE;
+            case "(" -> LPAREN;
+            case ")" -> RPAREN;
+            case "<" -> LESS;
+            case "<=" -> LESS_EQUAL;
+            case ">" -> GREATER;
+            case ">=" -> GREATER_EQUAL;
+            case "==" -> EQUAL;
+            case "!=" -> NOT_EQUAL;
+            case "++" -> PLUS_PLUS;
+            case "--" -> MINUS_MINUS;
+            case "/=" -> DIVIDE_ASSIGN;
+            case "*=" -> MULTIPLY_ASSIGN;
+            case "<<" -> SHIFT_LEFT;
+            case ">>" -> SHIFT_RIGHT;
+            default -> {
+                if (lexeme.chars().allMatch(Character::isDigit)) yield NUMBER;
+                if (lexeme.chars().allMatch(Character::isLetterOrDigit)) yield IDENTIFIER;
+                yield OTHER;
+            }
+        };
     }
 
     // Logs all identified tokens for debugging
