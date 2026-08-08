@@ -8,6 +8,12 @@ I built a real compiler pipeline from scratch — not using existing parsing lib
 
 ---
 
+## Demonstration
+
+![Time Complexity Analyzer Demo](./assets/timeComplexityGif.gif)
+
+---
+
 ## What It Does
 
 Paste Java code into the web UI. The system:
@@ -169,17 +175,17 @@ Expected output: `{"complexity":"O(n^2)","depth":2}`
 ### O(n²) — Nested Loops
 ```java
 for(int i = 0; i < n; i++) {
-    for(int j = 0; j < n; j++) {
-        sum = sum + 1;
-    }
-}
+        for(int j = 0; j < n; j++) {
+sum = sum + 1;
+        }
+        }
 ```
 **Output:** `O(n²)`, depth 2 ✅
 
 ### O(n) — Consecutive Loops (Not O(n²))
 ```java
 for(int i = 0; i < n; i++) { }
-for(int j = 0; j < n; j++) { }
+        for(int j = 0; j < n; j++) { }
 ```
 **Output:** `O(n)`, depth 1 ✅ (this trips up naive implementations)
 
@@ -192,8 +198,8 @@ for(int i = 1; i < n; i *= 2) { }
 ### O(n log n) — Outer Linear, Inner Log
 ```java
 for(int i = 0; i < n; i++) {
-    for(int j = 1; j < n; j *= 2) { }
-}
+        for(int j = 1; j < n; j *= 2) { }
+        }
 ```
 **Output:** `O(n log n)` ✅
 
